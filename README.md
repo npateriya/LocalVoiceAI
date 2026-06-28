@@ -26,20 +26,24 @@ Start the service once. Then switch to Claude, Cursor, VS Code, your browser, or
 
 ### Option A — Download release (recommended)
 
+**1. Download and install**
 ```bash
 curl -sL https://github.com/npateriya/LocalVoiceAI/releases/latest/download/localvoiceai-darwin-arm64.tar.gz | tar -xz
-cd localvoiceai-*
+cd localvoiceai-darwin-arm64
 bash install.sh
 ```
 
 ### Option B — Build from source
 
+**1. Install dependencies and build**
 ```bash
-make setup    # install dependencies
+make setup    # install Homebrew dependencies
 make install  # build and install
 ```
 
-**Grant permissions** (one-time — persists across reboots)
+---
+
+**2. Grant permissions** (one-time — persists across reboots)
 
 In System Settings → Privacy & Security, add `~/.local/bin/localvoice` to both:
 
@@ -51,34 +55,25 @@ In System Settings → Privacy & Security, add `~/.local/bin/localvoice` to both
 
 ![Input Monitoring permission](docs/input-monitoring.png)
 
-> Both toggles must be **blue (enabled)**. If you rebuild with `make update`, re-grant both permissions as the binary hash changes.
+> Both toggles must be **blue (enabled)**. After `make update` (rebuild), re-grant both — the binary hash changes.
 
-**4. Start the service**
+**3. Start the service**
+```bash
+launchctl start com.localvoiceai.localvoice
+```
+Or if installed from source:
 ```bash
 make start
 ```
 
-That's it. Switch to any app and hold **Fn+F10** to speak.
+**4. Use it**
 
-## Usage
-
-```bash
-make start    # start listening
-make stop     # stop listening
-make status   # check if running
-```
+Switch to any app — Claude, Cursor, VS Code, browser, anything — hold **Fn+F10**, speak, release. Text appears at the cursor.
 
 Check logs:
 ```bash
 tail -f /tmp/localvoice.log
 ```
-
-### Example
-
-1. Run `make start`
-2. Open Claude Code, Cursor, VS Code, a browser, or any text field
-3. Hold **Fn+F10** → speak → release
-4. Your speech appears as typed text in the active window
 
 ## How it works
 
