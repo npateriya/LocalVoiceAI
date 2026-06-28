@@ -43,6 +43,7 @@ jobs:
 
       - name: Package release
         run: |
+          VERSION=${{ github.ref_name }}
           PACKAGE=localvoiceai-darwin-arm64
           mkdir -p dist/${PACKAGE}
           cp localvoice dist/${PACKAGE}/
@@ -51,7 +52,8 @@ jobs:
           chmod +x dist/${PACKAGE}/install.sh
           cd dist
           tar -czf ${PACKAGE}.tar.gz ${PACKAGE}/
-          echo "PACKAGE=${PACKAGE}" >> $GITHUB_ENV
+          # versioned copy for pinning specific releases
+          cp ${PACKAGE}.tar.gz localvoiceai-${VERSION}-darwin-arm64.tar.gz
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -77,5 +79,7 @@ jobs:
             - **Input Monitoring** → add `~/.local/bin/localvoice`
 
             Then: `make start` or `localvoice-start`
-          files: dist/${{ env.PACKAGE }}.tar.gz
+          files: |
+            dist/localvoiceai-darwin-arm64.tar.gz
+            dist/localvoiceai-${{ github.ref_name }}-darwin-arm64.tar.gz
           fail_on_unmatched_files: true
