@@ -20,21 +20,26 @@ Start the service once. Then switch to Claude, Cursor, VS Code, your browser, or
 
 - Apple Silicon Mac (M1 or later)
 - macOS 14+
-- Homebrew
+- [Homebrew](https://brew.sh)
 
 ## Quick Start
 
-**1. Install dependencies**
+### Option A — Download release (recommended)
+
 ```bash
-make setup
+curl -sL https://github.com/npateriya/LocalVoiceAI/releases/latest/download/localvoiceai-darwin-arm64.tar.gz | tar -xz
+cd localvoiceai-*
+bash install.sh
 ```
 
-**2. Build and install the service**
+### Option B — Build from source
+
 ```bash
-make install
+make setup    # install dependencies
+make install  # build and install
 ```
 
-**3. Grant permissions** (one-time — persists across reboots)
+**Grant permissions** (one-time — persists across reboots)
 
 In System Settings → Privacy & Security, add `~/.local/bin/localvoice` to both:
 
