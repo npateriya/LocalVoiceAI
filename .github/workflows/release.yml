@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and release
+    runs-on: macos-15  # Apple Silicon (ARM64)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install dependencies
+        run: |
+          brew install pkg-config portaudio whisper-cpp
+          # whisper-cpp may ship libggml as one dylib; create expected symlinks
+          ln -sf /opt/homebrew/lib/libggml.dylib /opt/homebrew/lib/libggml-cpu.dylib  2>/dev/null || true
+          ln -sf /opt/homebrew/lib/libggml.dylib /opt/homebrew/lib/libggml-metal.dylib 2>/dev/null || true
+          ln -sf /opt/homebrew/lib/libggml.dylib /opt/homebrew/lib/libggml-blas.dylib  2>/dev/null || true
+
+      - name: Build binary
+        env:
+          CGO_CFLAGS: -I/opt/homebrew/include
+          CGO_LDFLAGS: >-
+            -L/opt/homebrew/lib
+            -lwhisper -lggml -lggml-base -lggml-cpu -lggml-metal -lggml-blas
+            -framework Accelerate -framework Metal -framework Foundation -framework CoreGraphics
+        run: |
+          go build -ldflags "-X main.version=${{ github.ref_name }}" -o localvoice ./cmd/localvoice/
+          codesign -s - --force localvoice
+
+      - name: Package release
+        run: |
+          VERSION=${{ github.ref_name }}
+          PACKAGE=localvoiceai-${VERSION}-darwin-arm64
+          mkdir -p dist/${PACKAGE}
+          cp localvoice dist/${PACKAGE}/
+          cp com.localvoiceai.localvoice.plist dist/${PACKAGE}/
+          cp install.sh dist/${PACKAGE}/
+          chmod +x dist/${PACKAGE}/install.sh
+          cd dist
+          tar -czf ${PACKAGE}.tar.gz ${PACKAGE}/
+          echo "PACKAGE=${PACKAGE}" >> $GITHUB_ENV
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LocalVoiceAI ${{ github.ref_name }}
+          body: |
+            ## Install
+
+            ```bash
+            curl -sL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/localvoiceai-${{ github.ref_name }}-darwin-arm64.tar.gz | tar -xz
+            cd localvoiceai-${{ github.ref_name }}-darwin-arm64
+            bash install.sh
+            ```
+
+            ### Requirements
+            - Apple Silicon Mac (M1 or later)
+            - macOS 14+
+            - [Homebrew](https://brew.sh) (for whisper-cpp + portaudio dependencies)
+
+            ### After install
+            Grant permissions in System Settings → Privacy & Security:
+            - **Accessibility** → add `~/.local/bin/localvoice`
+            - **Input Monitoring** → add `~/.local/bin/localvoice`
+
+            Then: `make start` or `localvoice-start`
+          files: dist/${{ env.PACKAGE }}.tar.gz
+          fail_on_unmatched_files: true
