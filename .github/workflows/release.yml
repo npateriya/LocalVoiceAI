@@ -43,8 +43,7 @@ jobs:
 
       - name: Package release
         run: |
-          VERSION=${{ github.ref_name }}
-          PACKAGE=localvoiceai-${VERSION}-darwin-arm64
+          PACKAGE=localvoiceai-darwin-arm64
           mkdir -p dist/${PACKAGE}
           cp localvoice dist/${PACKAGE}/
           cp com.localvoiceai.localvoice.plist dist/${PACKAGE}/
@@ -62,8 +61,8 @@ jobs:
             ## Install
 
             ```bash
-            curl -sL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/localvoiceai-${{ github.ref_name }}-darwin-arm64.tar.gz | tar -xz
-            cd localvoiceai-${{ github.ref_name }}-darwin-arm64
+            curl -sL https://github.com/${{ github.repository }}/releases/latest/download/localvoiceai-darwin-arm64.tar.gz | tar -xz
+            cd localvoiceai-darwin-arm64
             bash install.sh
             ```
 
