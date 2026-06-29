@@ -88,6 +88,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
@@ -95,6 +96,9 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 )
+
+// whisperAnnotation matches Whisper's non-speech output: (music), (phone buzzing), ♪ etc.
+var whisperAnnotation = regexp.MustCompile(`^[\s\(\[♪\*]*[^a-zA-Z]*[\)\]♪\*]*$|^\s*\([^)]*\)\s*$`)
 
 const framesPerBuf = 1024
 
@@ -190,6 +194,7 @@ func transcribeAndPaste(pcm []float32) {
 		"--no-timestamps",
 		"-otxt",
 		"--output-file", tmp.Name(),
+		"--no-speech-thold", "0.8", // raise threshold to reduce noise/music false positives
 	).CombinedOutput()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] whisper-cli: %v\n%s\n", err, string(out))
@@ -206,7 +211,11 @@ func transcribeAndPaste(pcm []float32) {
 
 	text := strings.TrimSpace(string(data))
 	if text == "" {
-		fmt.Fprintln(os.Stderr, "[STT] Nothing detected.")
+		fmt.Fprintln(os.Stderr, "[SKIP] Nothing detected.")
+		return
+	}
+	if whisperAnnotation.MatchString(text) {
+		fmt.Fprintf(os.Stderr, "[SKIP] Non-speech audio ignored: %s\n", text)
 		return
 	}
 
